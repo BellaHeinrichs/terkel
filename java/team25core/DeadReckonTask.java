@@ -35,8 +35,8 @@ package team25core;
 
 import com.qualcomm.robotcore.util.RobotLog;
 
-import static team25core.DeadReckonPath.SegmentType.BACK_LEFT_DIAGONAL;
-import static team25core.DeadReckonPath.SegmentType.BACK_RIGHT_DIAGONAL;
+import static team25core.DeadReckonPath.SegmentType.LEFT_DIAGONAL;
+import static team25core.DeadReckonPath.SegmentType.RIGHT_DIAGONAL;
 import static team25core.DeadReckonPath.SegmentType.SIDEWAYS;
 import static team25core.DeadReckonPath.SegmentType.STRAIGHT;
 import static team25core.DeadReckonPath.SegmentType.TURN;
@@ -168,8 +168,8 @@ public class DeadReckonTask extends RobotTask {
     {
         switch (segment.type) {
         case STRAIGHT:
-        case BACK_RIGHT_DIAGONAL:
-        case BACK_LEFT_DIAGONAL:
+        case RIGHT_DIAGONAL:
+        case LEFT_DIAGONAL:
         case SIDEWAYS:
             drivetrain.setTargetInches(segment.distance);
             break;
@@ -247,27 +247,31 @@ public class DeadReckonTask extends RobotTask {
 
         switch (segment.state) {
         case INITIALIZE:
+            RobotLog.i("INITIALIZE");
             drivetrain.resetEncoders();
             segment.state = DeadReckonPath.SegmentState.ENCODER_RESET;
             break;
         case ENCODER_RESET:
+            RobotLog.i("ENCODER");
             drivetrain.resetEncoders();
             segment.state = DeadReckonPath.SegmentState.SET_TARGET;
             break;
         case SET_TARGET:
+            RobotLog.i("SET_TARGET");
             drivetrain.encodersOn();
             setTarget(segment);
             segment.state = DeadReckonPath.SegmentState.CONSUME_SEGMENT;
             break;
         case CONSUME_SEGMENT:
+            RobotLog.i("CONSUME_SEGMENT " + segment.type);
             if (segment.type == STRAIGHT) {
                 drivetrain.straight(segment.speed);
             } else if (segment.type == SIDEWAYS) {
                 RobotLog.i("*****************************************SIDEWAYS CONSUME SEGMENT");
                 drivetrain.strafe(segment.speed);
-            } else if (segment.type == BACK_LEFT_DIAGONAL) {
+            } else if (segment.type == LEFT_DIAGONAL) {
                 drivetrain.leftDiagonal(segment.speed);
-            } else if (segment.type == BACK_RIGHT_DIAGONAL) {
+            } else if (segment.type == RIGHT_DIAGONAL) {
                 drivetrain.rightDiagonal(segment.speed);
             } else {
                 drivetrain.turn(segment.speed);
@@ -275,11 +279,13 @@ public class DeadReckonTask extends RobotTask {
             segment.state = DeadReckonPath.SegmentState.ENCODER_TARGET;
             break;
         case ENCODER_TARGET:
+          //  RobotLog.i("ENCODER TARGET");
             if ((sensorsInstalled == SensorsInstalled.SENSORS_ONE) && (leftCriteria.satisfied())) {
                 RobotLog.i("251 Solo sensor criteria satisfied");
                 segment.state = DeadReckonPath.SegmentState.STOP_MOTORS;
                 reason = DoneReason.SENSOR_SATISFIED;
             } else if (sensorsInstalled == SensorsInstalled.SENSORS_TWO) {
+              RobotLog.i("251 Sensors 2 installed");
                 if (leftCriteria.satisfied() && rightCriteria.satisfied()) {
                     RobotLog.i("251 Left and right criteria satisfied");
                     segment.state = DeadReckonPath.SegmentState.STOP_MOTORS;
@@ -294,11 +300,15 @@ public class DeadReckonTask extends RobotTask {
                     reason = DoneReason.RIGHT_SENSOR_SATISFIED;
                 }
             } else if (hitTarget()) {
+                RobotLog.i("HIT TARGET");
                 segment.state = DeadReckonPath.SegmentState.STOP_MOTORS;
                 reason = DoneReason.ENCODER_REACHED;
-            }
+            } //else {
+              //RobotLog.i("251 Ended in else");
+           // }
             break;
         case STOP_MOTORS:
+            RobotLog.i("STOP");
             drivetrain.stop();
             segment.state = DeadReckonPath.SegmentState.WAIT;
             waitState = 0;
@@ -316,8 +326,8 @@ public class DeadReckonTask extends RobotTask {
             segment.state = DeadReckonPath.SegmentState.INITIALIZE;
         }
 
-        robot.telemetry.addData("Segment: ", num);
-        robot.telemetry.addData("State: ", segment.state.toString());
+        // robot.telemetry.addData("Segment: ", num);
+        // robot.telemetry.addData("State: ", segment.state.toString());
 
         return false;
     }
